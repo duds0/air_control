@@ -1,4 +1,5 @@
 import '../core/api_client.dart';
+import 'energy.dart';
 import 'models.dart';
 
 class ThinqRepository {
@@ -21,6 +22,29 @@ class ThinqRepository {
   Future<AcState> state(String id) async {
     final res = await _api.get('/devices/$id/state');
     return AcState.fromJson((res as Map).cast<String, dynamic>());
+  }
+
+  /// Whether this unit reports energy usage (resultCode 0000 + energyUsage).
+  Future<bool> energySupported(String id) async {
+    final res = await _api.get('/devices/energy/$id/profile');
+    if (res is! Map) return false;
+    final props = (res['result'] as Map?)?['property'];
+    return res['resultCode'] == '0000' &&
+        props is List &&
+        props.contains('energyUsage');
+  }
+
+  /// Daily usage for the last [days] days (max 31), oldest first.
+  Future<List<EnergyDay>> energyDaily(
+    String id, {
+    int days = 31,
+    DateTime? now,
+  }) async {
+    final r = energyRange(now ?? DateTime.now(), days: days);
+    final res = await _api.get(
+      '/devices/energy/$id/usage?period=DAILY&startDate=${r.start}&endDate=${r.end}',
+    );
+    return res is Map ? parseEnergyDays(res.cast<String, dynamic>()) : const [];
   }
 
   Future<void> control(String id, Map<String, dynamic> body) =>

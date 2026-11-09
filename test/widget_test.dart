@@ -1,5 +1,6 @@
 import 'package:air_control/core/api_client.dart';
 import 'package:air_control/core/secure_store.dart';
+import 'package:air_control/data/energy.dart';
 import 'package:air_control/data/models.dart';
 import 'package:air_control/data/thinq_repository.dart';
 import 'package:air_control/domain/ac_controller.dart';
@@ -293,6 +294,45 @@ void main() {
     expect(next(1, 1, auto: false), 2);
     expect(nextFanSpeed(current: 0, steps: const [], hasAuto: false, direction: 1),
         isNull);
+  });
+
+  test('energy: parses the real daily response (energyUsage, not useAmount)', () {
+    // Trimmed from a real response of GET .../energy/{id}/usage?period=DAILY.
+    final days = parseEnergyDays({
+      'resultCode': '0000',
+      'result': {
+        'property': ['energyUsage'],
+        'dataList': [
+          {'energyUsage': 4893, 'usedDate': '20261108'},
+          {'energyUsage': 3274, 'usedDate': '20261010'}, // out of order
+          {'energyUsage': 2653, 'usedDate': '20261109'},
+          {'usedDate': 'garbage', 'energyUsage': 1}, // ignored
+          {'usedDate': '20261107', 'useAmount': 6723}, // spec's field name
+        ],
+      },
+    });
+    expect(days.map((d) => ymd(d.date)),
+        ['20261010', '20261107', '20261108', '20261109']);
+    expect(days.last.wh, 2653);
+    expect(days.last.isSameDay(DateTime(2026, 11, 9, 17, 30)), isTrue);
+    expect(parseEnergyDays({}), isEmpty);
+  });
+
+  test('energy: 31-day range matches what the LG API accepted', () {
+    final r = energyRange(DateTime(2026, 11, 9, 14, 5));
+    expect((r.start, r.end), ('20261010', '20261109'));
+    // Crossing a month/year boundary.
+    final y = energyRange(DateTime(2027, 1, 10), days: 31);
+    expect((y.start, y.end), ('20261211', '20270110'));
+    expect(energyRange(DateTime(2026, 11, 9), days: 1).start, '20261109');
+  });
+
+  test('energy: kWh formatting (Wh in, pt-BR out)', () {
+    expect(formatKwh(2653), '2,65 kWh');
+    expect(formatKwh(513), '0,51 kWh');
+    expect(formatKwh(0), '0,00 kWh');
+    expect(formatKwh(10250), '10,3 kWh'); // one decimal from 10 kWh up
+    expect(formatDayMonth(DateTime(2026, 11, 9)), '09/11');
   });
 
   test('command payloads', () {

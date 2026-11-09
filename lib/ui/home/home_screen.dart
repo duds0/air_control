@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/energy.dart';
 import '../../data/models.dart';
 import '../../domain/ac_controller.dart';
+import '../../domain/energy_controller.dart';
 import '../../domain/providers.dart';
 import '../../widget/ac_widget_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/grain_overlay.dart';
 import 'controls.dart';
+import 'energy_sheet.dart';
 import 'mode_sheet.dart';
 import 'temperature_dial.dart';
 import 'timer_sheet.dart';
@@ -36,10 +39,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState s) {
     final c = ref.read(acControllerProvider.notifier);
+    final e = ref.read(energyControllerProvider.notifier);
     if (s == AppLifecycleState.resumed) {
       c.resume();
+      e.resume();
     } else {
       c.pause();
+      e.pause();
     }
   }
 
@@ -128,6 +134,8 @@ class _TopBar extends ConsumerWidget {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
+    final energy = ref.watch(energyControllerProvider);
+    final today = energy.supported == true ? energy.today : null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 8, 0),
       child: Row(
@@ -158,7 +166,49 @@ class _TopBar extends ConsumerWidget {
                               key: const ValueKey('err'),
                               style: TextStyle(
                                   fontSize: 12, color: Colors.red.shade400))
-                          : const SizedBox(key: ValueKey('ok'), height: 16),
+                          : today != null
+                              ? Padding(
+                                  key: const ValueKey('energy'),
+                                  padding: const EdgeInsets.only(top: 4),
+                                  // Badge: soft accent pill that reads as tappable.
+                                  child: Material(
+                                    color: palette.accent.withValues(alpha: 0.14),
+                                    shape: StadiumBorder(
+                                      side: BorderSide(
+                                        color: palette.accent
+                                            .withValues(alpha: 0.28),
+                                      ),
+                                    ),
+                                    child: InkWell(
+                                      customBorder: const StadiumBorder(),
+                                      onTap: () => showEnergySheet(context,
+                                          accent: palette.accent),
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            8, 4, 12, 4),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.bolt_rounded,
+                                                size: 16,
+                                                color: palette.accent),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Hoje ${formatKwh(today.wh)}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: onSurface.withValues(
+                                                    alpha: 0.85),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox(key: ValueKey('ok'), height: 16),
                 ),
               ],
             ),
