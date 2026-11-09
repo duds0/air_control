@@ -3,6 +3,7 @@ import 'package:air_control/core/secure_store.dart';
 import 'package:air_control/data/models.dart';
 import 'package:air_control/data/thinq_repository.dart';
 import 'package:air_control/domain/ac_controller.dart';
+import 'package:air_control/domain/fan_speed.dart';
 import 'package:air_control/domain/providers.dart';
 import 'package:flutter/material.dart' show Brightness, ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -258,6 +259,40 @@ void main() {
     ctrl.setTargetTemp(24.5);
     ctrl.nudgeTemp(-1);
     expect(target(), 24.0);
+  });
+
+  test('steppedTemp (shared by app and home-screen widget)', () {
+    double up(double c, double s) => steppedTemp(c, s, 1, min: 16, max: 30);
+    double down(double c, double s) => steppedTemp(c, s, -1, min: 16, max: 30);
+
+    expect(up(25, 0.5), 25.5);
+    expect(down(25, 0.5), 24.5);
+    expect(up(24.5, 1), 25); // realigns to a whole degree
+    expect(down(24.5, 1), 24);
+    expect(up(30, 1), 30); // clamped to the unit's range
+    expect(down(16, 0.5), 16);
+    expect(formatTemp(24.5), '24,5');
+    expect(formatTemp(25), '25');
+  });
+
+  test('fan speed is one sequence: Auto, 1..5 (widget stepper)', () {
+    const steps = [1, 2, 3, 4, 5];
+    int? next(int? cur, int dir, {bool auto = true}) => nextFanSpeed(
+        current: cur, steps: steps, hasAuto: auto, direction: dir);
+
+    expect(next(0, 1), 1); // Auto +  -> 1
+    expect(next(1, -1), 0); // 1 -   -> Auto
+    expect(next(0, -1), isNull); // Auto -  -> nothing
+    expect(next(5, 1), isNull); // 5 +    -> nothing (no wrap)
+    expect(next(3, 1), 4);
+    expect(next(3, -1), 2);
+    expect(next(null, 1), 1); // unknown is treated as Auto
+
+    // A unit without Auto: 1 is the first value and the floor.
+    expect(next(1, -1, auto: false), isNull);
+    expect(next(1, 1, auto: false), 2);
+    expect(nextFanSpeed(current: 0, steps: const [], hasAuto: false, direction: 1),
+        isNull);
   });
 
   test('command payloads', () {

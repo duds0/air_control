@@ -3,10 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-String formatTemp(double t) {
-  final whole = t == t.roundToDouble();
-  return whole ? t.toStringAsFixed(0) : t.toStringAsFixed(1).replaceAll('.', ',');
-}
+import '../../domain/temp_step.dart';
+
+export '../../domain/temp_step.dart' show formatTemp;
 
 /// A 270° draggable arc dial for the target temperature.
 class TemperatureDial extends StatelessWidget {

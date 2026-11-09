@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Accent square button that sits inside a chip. The chip's corner radius is
+     16dp and the button is inset 3dp, so 16 - 3 = 13dp keeps the two curves
+     concentric (parallel) instead of looking pasted on. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_accent" />
+    <corners android:radius="13dp" />
+</shape>

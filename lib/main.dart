@@ -8,6 +8,7 @@ import 'package:window_manager/window_manager.dart';
 import 'app.dart';
 import 'core/secure_store.dart';
 import 'domain/providers.dart';
+import 'widget/ac_widget_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,8 @@ Future<void> main() async {
       },
     );
   }
+
+  await AcWidgetService.init(); // home-screen widget taps (Android)
 
   final store = SecureStore();
   final creds = await store.load();

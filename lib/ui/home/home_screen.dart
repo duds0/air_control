@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models.dart';
 import '../../domain/ac_controller.dart';
 import '../../domain/providers.dart';
+import '../../widget/ac_widget_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/grain_overlay.dart';
 import 'controls.dart';
@@ -186,9 +187,15 @@ class _TopBar extends ConsumerWidget {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             onSelected: (v) {
               if (v == 'out') ref.read(credentialsProvider.notifier).signOut();
+              if (v == 'widget') AcWidgetService.requestPin();
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'out', child: Text('Desconectar')),
+            itemBuilder: (_) => [
+              if (AcWidgetService.supported)
+                const PopupMenuItem(
+                  value: 'widget',
+                  child: Text('Adicionar widget à tela inicial'),
+                ),
+              const PopupMenuItem(value: 'out', child: Text('Desconectar')),
             ],
           ),
         ],

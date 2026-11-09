@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compact two-row widget sized for ONE cell of height (4x1).
+
+       Row 1:  Ar-condicionado          ( - )  26°  ( + )   (power)
+               Frio · Ambiente 27°
+       Row 2:  [ [-]  Vento  [+] ]    [ Swing ]    [ Display ]
+
+     The rows are short and tightly spaced (~72dp in total); the flexible gaps
+     only absorb whatever the launcher's cell has left over.
+
+     Only views RemoteViews supports (LinearLayout, FrameLayout, TextView,
+     ImageView). Icons are STATIC (tint set here, never at runtime): changing
+     an icon's color/drawable on every update makes the launcher reload it,
+     which shows up as a blink. State is shown with backgrounds, text colors
+     and visibility only. Text/clicks are set in AcWidgetProvider. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:background="@drawable/widget_bg">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Row 1: name/status | - temp + | power -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ar-condicionado"
+                android:textColor="@color/widget_text"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Abra o app para conectar"
+                android:textColor="@color/widget_dim"
+                android:textSize="12sp"
+                android:singleLine="true"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/row_temp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:id="@+id/temp_minus"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@drawable/widget_round_off">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_remove"
+                    android:tint="@color/widget_text" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/temp"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="--"
+                android:textColor="@color/widget_text"
+                android:textSize="26sp"
+                android:fontFamily="sans-serif-light"
+                android:includeFontPadding="false"
+                android:singleLine="true" />
+
+            <FrameLayout
+                android:id="@+id/temp_plus"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@drawable/widget_round_off">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_add"
+                    android:tint="@color/widget_text" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Power: two static icons, one shown at a time (no drawable reloads) -->
+        <FrameLayout
+            android:id="@+id/power"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/widget_round_off">
+
+            <ImageView
+                android:id="@+id/power_icon_off"
+                android:layout_width="21dp"
+                android:layout_height="21dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_power"
+                android:tint="@color/widget_text" />
+
+            <ImageView
+                android:id="@+id/power_icon_on"
+                android:layout_width="21dp"
+                android:layout_height="21dp"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                android:src="@drawable/ic_power"
+                android:tint="@color/widget_on_accent" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.4" />
+
+    <!-- Row 2: three identical chips of equal width: Vento | Swing | Display.
+         Vento is a stepper: [-]  caption + value  [+] over Auto, 1..5. Auto is
+         the first value of the sequence and "-" from 1 goes back to Auto. -->
+    <LinearLayout
+        android:id="@+id/row_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:id="@+id/wind_chip"
+            style="@style/WidgetChip"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Real buttons: accent squares inset 3dp from the chip edge -->
+            <FrameLayout
+                android:id="@+id/wind_minus"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="3dp"
+                android:background="@drawable/widget_btn">
+
+                <ImageView
+                    android:layout_width="17dp"
+                    android:layout_height="17dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Diminuir velocidade"
+                    android:src="@drawable/ic_remove"
+                    android:tint="@color/widget_on_button" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Vento"
+                    android:textColor="@color/widget_accent"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:singleLine="true" />
+
+                <!-- Either the speed number or "Auto" (visibility only, so no
+                     text size/style changes on update) -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/wind_value"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="3"
+                        android:textColor="@color/widget_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:singleLine="true"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/wind_value_auto"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="Auto"
+                        android:textColor="@color/widget_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:singleLine="true" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/wind_plus"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="3dp"
+                android:background="@drawable/widget_btn">
+
+                <ImageView
+                    android:layout_width="17dp"
+                    android:layout_height="17dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Aumentar velocidade"
+                    android:src="@drawable/ic_add"
+                    android:tint="@color/widget_on_button" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/swing"
+            style="@style/WidgetChip"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_swing"
+                android:tint="@color/widget_text" />
+
+            <TextView
+                android:id="@+id/swing_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="Swing"
+                android:textColor="@color/widget_dim"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/display"
+            style="@style/WidgetChip"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_sun"
+                android:tint="@color/widget_text" />
+
+            <TextView
+                android:id="@+id/display_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="Display"
+                android:textColor="@color/widget_dim"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

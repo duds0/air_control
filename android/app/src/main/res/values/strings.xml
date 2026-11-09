@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">Air Control</string>
+    <string name="widget_description">Liga, temperatura, vento, swing e visor do ar-condicionado.</string>
+</resources>

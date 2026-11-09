@@ -5,6 +5,7 @@ import '../core/api_client.dart';
 import '../core/regions.dart';
 import '../core/secure_store.dart';
 import '../data/thinq_repository.dart';
+import '../widget/ac_widget_service.dart';
 
 final secureStoreProvider = Provider<SecureStore>((_) => SecureStore());
 
@@ -39,6 +40,7 @@ class CredentialsNotifier extends Notifier<ThinqCredentials?> {
 
   Future<void> signOut() async {
     await ref.read(secureStoreProvider).clear();
+    await AcWidgetService.clear();
     state = null;
   }
 }

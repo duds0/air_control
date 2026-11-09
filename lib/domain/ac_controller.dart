@@ -5,7 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/errors.dart';
 import '../data/models.dart';
 import '../data/thinq_repository.dart';
+import '../widget/ac_widget_service.dart';
 import 'providers.dart';
+import 'temp_step.dart';
+
+export 'temp_step.dart';
 
 /// One-shot message for the UI (identity matters, so each is shown once).
 class Notice {
@@ -102,6 +106,7 @@ class AcController extends Notifier<AcViewState> {
         ac: results[1] as AcState,
         loading: false,
       ));
+      _syncWidget();
       _poll?.cancel();
       _poll = Timer.periodic(_pollEvery, (_) => refresh());
     } on ThinqException catch (e) {
@@ -133,9 +138,18 @@ class AcController extends Notifier<AcViewState> {
       final ac = await repo.state(id);
       if (_busy > 0 || (_debounce?.isActive ?? false)) return; // stale
       _set(state.copyWith(ac: ac, offline: false, loading: false));
+      _syncWidget();
     } on ThinqException catch (e) {
       _handleError(e);
     }
+  }
+
+  /// Keeps the home-screen widget in step with what the app just read.
+  void _syncWidget() {
+    final d = state.device;
+    final ac = state.ac;
+    if (d == null || ac == null) return;
+    AcWidgetService.publish(device: d, profile: state.profile, ac: ac);
   }
 
   void pause() => _paused = true;
@@ -179,18 +193,16 @@ class AcController extends Notifier<AcViewState> {
     );
   }
 
-  /// Moves the target to the next multiple of the chosen step, so switching
-  /// from 0.5° to 1° steps realigns 24.5 → 25 instead of 25.5.
+  /// Moves the target to the next multiple of the chosen step.
   void nudgeTemp(int direction) {
     final ac = state.ac;
     if (ac == null) return;
     // Computed from own state: reading effectiveTempStepProvider here would
     // be circular (it depends on this controller).
-    final step =
-        resolveTempStep(state.profile.tempStep, ref.read(tempStepProvider));
-    final q = ac.targetTemp / step;
-    final n = direction > 0 ? (q + 1e-9).floor() + 1 : (q - 1e-9).ceil() - 1;
-    setTargetTemp(n * step);
+    final p = state.profile;
+    final step = resolveTempStep(p.tempStep, ref.read(tempStepProvider));
+    setTargetTemp(steppedTemp(ac.targetTemp, step, direction,
+        min: p.minTemp, max: p.maxTemp));
   }
 
   /// "Auto" (and legacy LOW/MID/HIGH on models without numbered speeds).
@@ -267,16 +279,6 @@ class AcController extends Notifier<AcViewState> {
 
 final acControllerProvider =
     NotifierProvider<AcController, AcViewState>(AcController.new);
-
-/// Selectable temperature increments: the device's own step, plus 1°.
-List<double> tempStepOptions(double deviceStep) =>
-    deviceStep < 1 ? [deviceStep, 1.0] : [deviceStep];
-
-/// The increment in use: the user's choice if valid, else the device's step.
-double resolveTempStep(double deviceStep, double? pref) {
-  final options = tempStepOptions(deviceStep);
-  return options.contains(pref) ? pref! : options.first;
-}
 
 final tempStepOptionsProvider = Provider<List<double>>((ref) {
   final step = ref.watch(acControllerProvider.select((s) => s.profile.tempStep));

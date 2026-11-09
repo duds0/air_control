@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home-screen widget palette (light). values-night overrides it. -->
+    <color name="widget_bg">#F5F7FA</color>
+    <color name="widget_text">#14181F</color>
+    <color name="widget_dim">#6B7480</color>
+    <color name="widget_chip">#E3E8EE</color>
+    <color name="widget_chip_on">#CFE6FB</color>
+    <color name="widget_accent">#2B8BE6</color>
+    <color name="widget_on_accent">#FFFFFF</color>
+    <!-- Icon on the blue +/- buttons: black in the light theme, white in dark -->
+    <color name="widget_on_button">#14181F</color>
+</resources>

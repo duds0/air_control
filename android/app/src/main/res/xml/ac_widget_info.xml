@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compact 4x1 with two rows. The content is ~72dp tall; if the launcher's
+     cell is taller, the leftover is shared by the flexible gaps in
+     layout/ac_widget.xml. updatePeriodMillis is a safety net (the system caps
+     it at 30 min); the app and every tap on the widget refresh the data much
+     more often. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="250dp"
+    android:minResizeHeight="72dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/ac_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_description" />
