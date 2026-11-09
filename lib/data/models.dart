@@ -25,6 +25,24 @@ class ThinqDevice {
   }
 }
 
+/// A wall-clock time (for the "turn on / off at" timers), 24 h.
+class ClockTime {
+  const ClockTime(this.hour, this.minute);
+
+  final int hour;
+  final int minute;
+
+  String get label =>
+      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
+  @override
+  bool operator ==(Object other) =>
+      other is ClockTime && other.hour == hour && other.minute == minute;
+
+  @override
+  int get hashCode => Object.hash(hour, minute);
+}
+
 /// Current AC state, mirroring `GET /devices/{id}/state`.
 class AcState {
   const AcState({
@@ -36,7 +54,9 @@ class AcState {
     this.windStep,
     this.swing,
     this.displayLight,
-    this.sleepTimerSet = false,
+    this.startAt,
+    this.stopAt,
+    this.sleepFor,
     this.hasError = false,
   });
 
@@ -48,14 +68,33 @@ class AcState {
   final int? windStep; // 1..5, absent while AUTO
   final bool? swing;
   final bool? displayLight;
-  final bool sleepTimerSet;
+
+  /// "Turn on at" / "turn off at" timers (null = not set). The unit returns
+  /// the hour and minute only while the timer is SET.
+  final ClockTime? startAt;
+  final ClockTime? stopAt;
+
+  /// "Turn off in" timer (null = not set).
+  final Duration? sleepFor;
   final bool hasError;
+
+  bool get sleepTimerSet => sleepFor != null;
+  bool get anyTimerSet => startAt != null || stopAt != null || sleepFor != null;
 
   factory AcState.fromJson(Map<String, dynamic> j) {
     Map<String, dynamic> m(String k) =>
         (j[k] as Map?)?.cast<String, dynamic>() ?? const {};
     final temp = m('temperature');
     final light = m('display')['light'];
+    final timer = m('timer');
+    final sleep = m('sleepTimer');
+
+    ClockTime? clock(String flag, String hour, String minute) =>
+        timer[flag] == 'SET'
+            ? ClockTime((timer[hour] as num?)?.toInt() ?? 0,
+                (timer[minute] as num?)?.toInt() ?? 0)
+            : null;
+
     return AcState(
       power: m('operation')['airConOperationMode'] == 'POWER_ON',
       mode: m('airConJobMode')['currentJobMode'] as String? ?? 'COOL',
@@ -65,7 +104,16 @@ class AcState {
       windStep: (m('airFlow')['windStep'] as num?)?.toInt(),
       swing: m('windDirection')['rotateUpDown'] as bool?,
       displayLight: light == null ? null : light == 'ON',
-      sleepTimerSet: m('sleepTimer')['relativeStopTimer'] == 'SET',
+      startAt: clock('absoluteStartTimer', 'absoluteHourToStart',
+          'absoluteMinuteToStart'),
+      stopAt:
+          clock('absoluteStopTimer', 'absoluteHourToStop', 'absoluteMinuteToStop'),
+      sleepFor: sleep['relativeStopTimer'] == 'SET'
+          ? Duration(
+              hours: (sleep['relativeHourToStop'] as num?)?.toInt() ?? 0,
+              minutes: (sleep['relativeMinuteToStop'] as num?)?.toInt() ?? 0,
+            )
+          : null,
       hasError: m('runState')['currentState'] == 'ERROR',
     );
   }
@@ -87,7 +135,12 @@ class AcState {
     bool clearWindStep = false,
     bool? swing,
     bool? displayLight,
-    bool? sleepTimerSet,
+    ClockTime? startAt,
+    bool clearStartAt = false,
+    ClockTime? stopAt,
+    bool clearStopAt = false,
+    Duration? sleepFor,
+    bool clearSleepFor = false,
   }) =>
       AcState(
         power: power ?? this.power,
@@ -101,7 +154,9 @@ class AcState {
         windStep: clearWindStep ? null : (windStep ?? this.windStep),
         swing: swing ?? this.swing,
         displayLight: displayLight ?? this.displayLight,
-        sleepTimerSet: sleepTimerSet ?? this.sleepTimerSet,
+        startAt: clearStartAt ? null : (startAt ?? this.startAt),
+        stopAt: clearStopAt ? null : (stopAt ?? this.stopAt),
+        sleepFor: clearSleepFor ? null : (sleepFor ?? this.sleepFor),
         hasError: hasError,
       );
 }
@@ -119,6 +174,8 @@ class AcProfile {
     required this.canSwing,
     required this.canDisplayLight,
     required this.canSleepTimer,
+    this.canStartTimer = false,
+    this.canStopTimer = false,
   });
 
   final List<String> modes;
@@ -133,6 +190,12 @@ class AcProfile {
   final bool canSwing;
   final bool canDisplayLight;
   final bool canSleepTimer;
+
+  /// `timer.absoluteHourToStart` / `...ToStop` are writable.
+  final bool canStartTimer;
+  final bool canStopTimer;
+
+  bool get hasAnyTimer => canSleepTimer || canStartTimer || canStopTimer;
 
   static const fallback = AcProfile(
     modes: ['COOL', 'FAN', 'AIR_DRY'],
@@ -196,6 +259,8 @@ class AcProfile {
       canSwing: writable(node('windDirection', 'rotateUpDown')),
       canDisplayLight: writable(node('display', 'light')),
       canSleepTimer: writable(node('sleepTimer', 'relativeHourToStop')),
+      canStartTimer: writable(node('timer', 'absoluteHourToStart')),
+      canStopTimer: writable(node('timer', 'absoluteHourToStop')),
     );
   }
 }

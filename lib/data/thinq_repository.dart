@@ -81,4 +81,21 @@ class ThinqRepository {
   static Map<String, dynamic> cancelSleepTimer() => {
         'sleepTimer': {'relativeStopTimer': 'UNSET'},
       };
+
+  // "Turn on at" / "turn off at" (verified on a real unit): sending hour and
+  // minute arms the timer (and replaces an active one); `...Timer: UNSET`
+  // cancels it. Start and stop must be sent as separate requests: together
+  // the LG API rejects them (2207).
+  static Map<String, dynamic> startTimer(int hour, int minute) => {
+        'timer': {'absoluteHourToStart': hour, 'absoluteMinuteToStart': minute},
+      };
+  static Map<String, dynamic> stopTimer(int hour, int minute) => {
+        'timer': {'absoluteHourToStop': hour, 'absoluteMinuteToStop': minute},
+      };
+  static Map<String, dynamic> cancelStartTimer() => {
+        'timer': {'absoluteStartTimer': 'UNSET'},
+      };
+  static Map<String, dynamic> cancelStopTimer() => {
+        'timer': {'absoluteStopTimer': 'UNSET'},
+      };
 }

@@ -227,20 +227,57 @@ class AcController extends Notifier<AcViewState> {
         (s) => s.copyWith(displayLight: on));
   }
 
-  void setSleepTimer(Duration d) => _command(
-        ThinqRepository.sleepTimer(d.inHours, d.inMinutes % 60),
-        (s) => s.copyWith(sleepTimerSet: true),
+  /// "Turn off in" timer. The unit accepts 30 min and whole hours (1–12 h);
+  /// it silently IGNORES a new value while one is active, so an active timer
+  /// is cancelled first (verified on a real unit).
+  void setSleepTimer(Duration d) => _commandAll(
+        [
+          if (state.ac?.sleepTimerSet ?? false)
+            ThinqRepository.cancelSleepTimer(),
+          ThinqRepository.sleepTimer(d.inHours, d.inMinutes % 60),
+        ],
+        (s) => s.copyWith(sleepFor: d),
       );
 
   void cancelSleepTimer() => _command(
         ThinqRepository.cancelSleepTimer(),
-        (s) => s.copyWith(sleepTimerSet: false),
+        (s) => s.copyWith(clearSleepFor: true),
+      );
+
+  /// "Turn on at" / "turn off at" a fixed time. Setting replaces an active
+  /// timer directly (no cancel needed); cancelling needs UNSET.
+  void setStartTimer(ClockTime t) => _command(
+        ThinqRepository.startTimer(t.hour, t.minute),
+        (s) => s.copyWith(startAt: t),
+      );
+
+  void cancelStartTimer() => _command(
+        ThinqRepository.cancelStartTimer(),
+        (s) => s.copyWith(clearStartAt: true),
+      );
+
+  void setStopTimer(ClockTime t) => _command(
+        ThinqRepository.stopTimer(t.hour, t.minute),
+        (s) => s.copyWith(stopAt: t),
+      );
+
+  void cancelStopTimer() => _command(
+        ThinqRepository.cancelStopTimer(),
+        (s) => s.copyWith(clearStopAt: true),
       );
 
   /// Applies [optimistic] immediately, then sends [body] (optionally
   /// debounced). The server state is re-read once the device has settled.
   void _command(
     Map<String, dynamic> body,
+    AcState Function(AcState) optimistic, {
+    Duration? debounce,
+  }) =>
+      _commandAll([body], optimistic, debounce: debounce);
+
+  /// Like [_command] but sends several requests one after the other.
+  void _commandAll(
+    List<Map<String, dynamic>> bodies,
     AcState Function(AcState) optimistic, {
     Duration? debounce,
   }) {
@@ -250,19 +287,21 @@ class AcController extends Notifier<AcViewState> {
 
     if (debounce != null) {
       _debounce?.cancel();
-      _debounce = Timer(debounce, () => _send(body));
+      _debounce = Timer(debounce, () => _send(bodies));
     } else {
-      _send(body);
+      _send(bodies);
     }
   }
 
-  Future<void> _send(Map<String, dynamic> body) async {
+  Future<void> _send(List<Map<String, dynamic>> bodies) async {
     final repo = _repo;
     final id = state.device?.id;
     if (repo == null || id == null) return;
     _busy++;
     try {
-      await repo.control(id, body);
+      for (final body in bodies) {
+        await repo.control(id, body);
+      }
       await Future<void>.delayed(_settle);
     } on ThinqException catch (e) {
       if (e.unauthorized) {

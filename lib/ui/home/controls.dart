@@ -120,6 +120,7 @@ class ToggleTile extends StatelessWidget {
     required this.active,
     required this.accent,
     required this.onTap,
+    this.enabled = true,
   });
 
   final IconData icon;
@@ -128,12 +129,27 @@ class ToggleTile extends StatelessWidget {
   final Color accent;
   final VoidCallback onTap;
 
+  /// Disabled tiles are dimmed and ignore taps.
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
     return Expanded(
-      child: GestureDetector(
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 300),
+        opacity: enabled ? 1 : 0.4,
+        child: IgnorePointer(
+          ignoring: !enabled,
+          child: _tile(theme, onSurface),
+        ),
+      ),
+    );
+  }
+
+  Widget _tile(ThemeData theme, Color onSurface) {
+    return GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 240),
@@ -165,7 +181,6 @@ class ToggleTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }

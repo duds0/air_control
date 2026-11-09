@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'domain/providers.dart';
@@ -17,6 +18,11 @@ class AirControlApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
+      // All app text is Portuguese; this also localizes built-in widgets such
+      // as the time picker ("OK" / "Cancelar").
+      locale: const Locale('pt', 'BR'),
+      supportedLocales: const [Locale('pt', 'BR')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       themeMode: ref.watch(themeModeProvider),
       themeAnimationDuration: const Duration(milliseconds: 350),
       home: AnimatedSwitcher(

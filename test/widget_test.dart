@@ -335,6 +335,79 @@ void main() {
     expect(formatDayMonth(DateTime(2026, 11, 9)), '09/11');
   });
 
+  test('timers: parsed from the real state/profile of the unit', () {
+    // Real responses (trimmed): armed timers carry their hour/minute.
+    final armed = AcState.fromJson({
+      ..._state,
+      'timer': {
+        'absoluteStartTimer': 'SET',
+        'absoluteHourToStart': 6,
+        'absoluteMinuteToStart': 30,
+        'absoluteStopTimer': 'SET',
+        'absoluteHourToStop': 23,
+        'absoluteMinuteToStop': 5,
+      },
+      'sleepTimer': {
+        'relativeStopTimer': 'SET',
+        'relativeHourToStop': 2,
+        'relativeMinuteToStop': 0,
+      },
+    });
+    expect(armed.startAt, const ClockTime(6, 30));
+    expect(armed.startAt!.label, '06:30');
+    expect(armed.stopAt!.label, '23:05');
+    expect(armed.sleepFor, const Duration(hours: 2));
+    expect(armed.anyTimerSet, isTrue);
+
+    // Real "nothing armed" state: no leftover hour/minute is read.
+    final idle = AcState.fromJson({
+      ..._state,
+      'timer': {'absoluteStartTimer': 'UNSET', 'absoluteStopTimer': 'UNSET'},
+    });
+    expect(idle.startAt, isNull);
+    expect(idle.stopAt, isNull);
+    expect(idle.anyTimerSet, isFalse);
+
+    // Optimistic edits and clears.
+    final set = idle.copyWith(startAt: const ClockTime(7, 0));
+    expect(set.startAt!.label, '07:00');
+    expect(set.copyWith(clearStartAt: true).startAt, isNull);
+    expect(set.copyWith(stopAt: const ClockTime(8, 0)).startAt!.label, '07:00');
+
+    // Capabilities come from what the profile marks writable.
+    final p = AcProfile.fromJson({
+      'property': {
+        'timer': {
+          'absoluteHourToStart': {'type': 'number', 'mode': ['r', 'w']},
+          'absoluteHourToStop': {'type': 'number', 'mode': ['r']},
+        },
+      },
+    });
+    expect(p.canStartTimer, isTrue);
+    expect(p.canStopTimer, isFalse);
+    expect(p.hasAnyTimer, isTrue);
+    expect(AcProfile.fromJson({'property': {}}).hasAnyTimer, isFalse);
+  });
+
+  test('timers: payloads (start and stop are separate requests)', () {
+    expect(ThinqRepository.startTimer(6, 30), {
+      'timer': {'absoluteHourToStart': 6, 'absoluteMinuteToStart': 30},
+    });
+    expect(ThinqRepository.stopTimer(23, 5), {
+      'timer': {'absoluteHourToStop': 23, 'absoluteMinuteToStop': 5},
+    });
+    expect(ThinqRepository.cancelStartTimer(), {
+      'timer': {'absoluteStartTimer': 'UNSET'},
+    });
+    expect(ThinqRepository.cancelStopTimer(), {
+      'timer': {'absoluteStopTimer': 'UNSET'},
+    });
+    // 30 min is hour 0 / minute 30 (accepted by the unit); whole hours use 0.
+    expect(ThinqRepository.sleepTimer(0, 30), {
+      'sleepTimer': {'relativeHourToStop': 0, 'relativeMinuteToStop': 30},
+    });
+  });
+
   test('command payloads', () {
     expect(ThinqRepository.power(true), {
       'operation': {'airConOperationMode': 'POWER_ON'},

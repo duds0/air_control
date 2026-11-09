@@ -393,48 +393,46 @@ class _Body extends ConsumerWidget {
                       onSelected: ctrl.setWind,
                     ),
                   ],
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      if (p.canSwing) ...[
-                        ToggleTile(
-                          icon: Icons.swap_vert_rounded,
-                          label: 'Swing',
-                          active: ac.swing ?? false,
-                          accent: accent,
-                          onTap: ctrl.toggleSwing,
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      if (p.canDisplayLight) ...[
-                        ToggleTile(
-                          icon: Icons.light_mode_outlined,
-                          label: 'Display',
-                          active: ac.displayLight ?? false,
-                          accent: accent,
-                          onTap: ctrl.toggleDisplayLight,
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      if (p.canSleepTimer)
-                        ToggleTile(
-                          icon: Icons.bedtime_outlined,
-                          label: 'Timer',
-                          active: ac.sleepTimerSet,
-                          accent: accent,
-                          onTap: () => showSleepTimerSheet(
-                            context,
-                            active: ac.sleepTimerSet,
-                            accent: accent,
-                            onSet: ctrl.setSleepTimer,
-                            onCancel: ctrl.cancelSleepTimer,
-                          ),
-                        ),
-                    ],
-                  ),
                 ],
               ),
             ),
+          ),
+          const SizedBox(height: 14),
+          // Outside the dimmed group: Swing/Display need the unit on, but
+          // timers don't ("turn on at 06:30" is set while it is off).
+          Row(
+            children: [
+              if (p.canSwing) ...[
+                ToggleTile(
+                  icon: Icons.swap_vert_rounded,
+                  label: 'Swing',
+                  active: ac.swing ?? false,
+                  accent: accent,
+                  enabled: ac.power,
+                  onTap: ctrl.toggleSwing,
+                ),
+                const SizedBox(width: 12),
+              ],
+              if (p.canDisplayLight) ...[
+                ToggleTile(
+                  icon: Icons.light_mode_outlined,
+                  label: 'Display',
+                  active: ac.displayLight ?? false,
+                  accent: accent,
+                  enabled: ac.power,
+                  onTap: ctrl.toggleDisplayLight,
+                ),
+                const SizedBox(width: 12),
+              ],
+              if (p.hasAnyTimer)
+                ToggleTile(
+                  icon: Icons.schedule_rounded,
+                  label: 'Timer',
+                  active: ac.anyTimerSet,
+                  accent: accent,
+                  onTap: () => showTimerSheet(context, accent: accent),
+                ),
+            ],
           ),
         ],
       ),
