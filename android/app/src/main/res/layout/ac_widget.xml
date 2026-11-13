@@ -34,34 +34,48 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <LinearLayout
+        <!-- Takes all the space left of the temperature controls. The empty
+             FrameLayout behind fills it and refreshes the widget; the text
+             block on top is only as wide as its text and opens the app. -->
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_vertical">
+            android:layout_weight="1">
 
-            <TextView
-                android:id="@+id/title"
+            <FrameLayout
+                android:id="@+id/refresh_area"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Ar-condicionado"
-                android:textColor="@color/widget_text"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:singleLine="true"
-                android:ellipsize="end" />
+                android:layout_height="match_parent" />
 
-            <TextView
-                android:id="@+id/status"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:id="@+id/header_text"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Abra o app para conectar"
-                android:textColor="@color/widget_dim"
-                android:textSize="12sp"
-                android:singleLine="true"
-                android:ellipsize="end" />
-        </LinearLayout>
+                android:layout_gravity="center_vertical|start"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ar-condicionado"
+                    android:textColor="@color/widget_text"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:singleLine="true"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Abra o app para conectar"
+                    android:textColor="@color/widget_dim"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:ellipsize="end" />
+            </LinearLayout>
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/row_temp"

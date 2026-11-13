@@ -8,4 +8,6 @@
     <color name="widget_accent">#5BB5FF</color>
     <color name="widget_on_accent">#0B1722</color>
     <color name="widget_on_button">#FFFFFF</color>
+    <!-- Press ripple on the widget buttons -->
+    <color name="widget_ripple">#33FFFFFF</color>
 </resources>
